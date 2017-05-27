@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MyGenericContext.Settings;
 
 namespace MyGenericContext
 {
@@ -27,6 +28,8 @@ namespace MyGenericContext
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<RetryConnectionSettings>(Configuration.GetSection("RetrySettings"));
+
             // Add framework services.
             services.AddMvc();
         }

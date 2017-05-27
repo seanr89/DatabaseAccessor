@@ -1,357 +1,224 @@
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using MyGenericContext.Models;
+using Newtonsoft.Json;
 
 namespace MyGenericContext.Utilities
 {
-public class DatabaseContext : IDatabaseContext, IDisposable
+    public static class UtilityMethods
     {
-        private readonly ILogger _Logger;
-        private readonly DatabaseConnectionSettings _ConnectionSettings;
-        private RetryConnectionSettings _RetrySettings;
-        private readonly SqlConnection _Connection;
+        private static readonly ILogger _Logger;
 
         /// <summary>
-        /// Handler object to request DataRetry Calls
+        /// Static constructor method
+        /// Includes method to generate ApplicationLogger object
         /// </summary>
-        private DataRetryHandler _RetryPolicyHandler;
-
-        private readonly RetryPolicy _RetryPolicy;
-
-        /// <summary>
-        /// DI Constructor
-        /// </summary>
-        /// <param name="Logger"></param>
-        /// <param name="ConnectionSettings"></param>
-        /// <param name="RetrySettings"></param>
-        /// <param name="RetryPolicyHandler"></param>
-        public DatabaseContext(ILogger<DatabaseContext> Logger,
-            IOptions<DatabaseConnectionSettings> ConnectionSettings,
-            IOptions<RetryConnectionSettings> RetrySettings,
-            DataRetryHandler RetryPolicyHandler)
+        static UtilityMethods()
         {
-            _Logger = Logger;
-            _ConnectionSettings = ConnectionSettings.Value;
-            _RetrySettings = RetrySettings.Value;
-            _RetryPolicyHandler = RetryPolicyHandler;
-            _Connection = new SqlConnection(_ConnectionSettings.DefaultConnection);
-
-            _RetryPolicy = _RetryPolicyHandler.GenerateRetryPolicy();
+            _Logger = ApplicationLoggerProvider.CreateLogger(typeof(UtilityMethods).ToString());
         }
 
         /// <summary>
-        /// Non DI Constructor
+        /// Static operation to get the name of the method calling this method
         /// </summary>
-        /// <param name="ConnectionSettings"></param>
-        /// <param name="RetrySettings"></param>
-        /// <param name="RetryPolicyHandler"></param>
-        public DatabaseContext(DatabaseConnectionSettings ConnectionSettings,
-            RetryConnectionSettings RetrySettings,
-            DataRetryHandler RetryPolicyHandler)
+        /// <param name="name"></param>
+        /// <returns>The method calling name</returns>
+        public static string GetCallerMemberName([CallerMemberName]string name = "")
         {
-            _Logger = ApplicationLoggerProvider.CreateLogger<DatabaseContext>();
-            _ConnectionSettings = ConnectionSettings;
-            _RetrySettings = RetrySettings;
-            _RetryPolicyHandler = RetryPolicyHandler;
-            _Connection = new SqlConnection(_ConnectionSettings.DefaultConnection);
-
-            _RetryPolicy = _RetryPolicyHandler.GenerateRetryPolicy();
+            return name;
         }
-
         /// <summary>
-        /// Additional Constructor
+        /// Static operation to check if the provided Datareader object has the provided column name
         /// </summary>
-        /// <param name="ConnectionSettings"></param>
-        /// <param name="RetrySettings"></param>
-        public DatabaseContext(DatabaseConnectionSettings ConnectionSettings,
-                RetryConnectionSettings RetrySettings)
+        /// <param name="r">the datareader object</param>
+        /// <param name="columnName">the column name to search for</param>
+        /// <returns>A boolean variable</returns>
+        public static bool HasColumn(this IDataRecord r, string columnName)
         {
-            _Logger = ApplicationLoggerProvider.CreateLogger<DatabaseContext>();
-            _ConnectionSettings = ConnectionSettings;
-            _RetrySettings = RetrySettings;
-            _RetryPolicyHandler = new DataRetryHandler(_RetrySettings);
-            _Connection = new SqlConnection(_ConnectionSettings.DefaultConnection);
-            _RetryPolicy = _RetryPolicyHandler.GenerateRetryPolicy();
-        }
-
-        /// <summary>
-        /// Adds the supplied parameters to the supplied command object
-        /// </summary>
-        /// <param name="command">The current SqlCommand instance</param>
-        /// <param name="parameters">The supplied parameters</param>
-        public void AddParameters(SqlCommand command, Dictionary<string, object> parameters)
-        {
-            if (parameters == null)
+            if (string.IsNullOrWhiteSpace(columnName))
             {
-                return;
-            }
-            foreach (var parameter in parameters)
-            {
-                SqlParameter sqlParameter = command.CreateParameter();
-                sqlParameter.ParameterName = parameter.Key;
-                sqlParameter.Value = parameter.Value ?? DBNull.Value;
-                command.Parameters.Add(sqlParameter);
-            }
-        }
-
-        /// <summary>
-        /// Handle SQL StoredProcedure generation command generation without any additional parameters
-        /// </summary>
-        /// <param name="commandText">The provided command text. For stored procedures, this is the name of the stored procedure.</param>
-        /// <param name="connection">The ReliableSqlConnection instance to use</param>
-        /// <returns>A SQLCommand object configured for stored procedures</returns>
-        public SqlCommand CreateCommand(string commandText, SqlConnection connection)
-        {
-            SqlCommand command = connection.CreateCommand();
-            command.CommandType = CommandType.StoredProcedure;
-            command.CommandText = commandText;
-            return command;
-        }
-
-        /// <summary>
-        /// Handle SQL StoredProcedure generation command generation with additional parameters
-        /// </summary>
-        /// <param name="commandText"></param>
-        /// <param name="connection">The </param>
-        /// <param name="parameters">The parameters associated with the stored procedure </param>
-        /// <returns>A SQLCommand object configured for stored procedures</returns>
-        public SqlCommand CreateCommand(string commandText, SqlConnection connection, Dictionary<string, object> parameters)
-        {
-            SqlCommand command = connection.CreateCommand();
-            command.CommandType = CommandType.StoredProcedure;
-            command.CommandText = commandText;
-            AddParameters(command, parameters);
-            return command;
-        }
-
-        /// <summary>
-        /// Executes a non-query statement
-        /// </summary>
-        /// <param name="commandText">The stored procedure to be executed</param>
-        /// <param name="paramaters">The parameters associated with the stored procedure (default null)</param>
-        /// <returns>The count of records affected by the statement</returns>
-        public async Task<int> Execute(string commandText, Dictionary<string, object> parameters)
-        {
-            int result = 0;
-
-            if (string.IsNullOrEmpty(commandText))
-            {
-                throw new ArgumentException("Command text cannot be null or empty");
+                return false;
             }
 
             try
             {
-                await _RetryPolicy.ExecuteAsync(async () =>
-                {
-                    SqlCommand command = null;
-                    if (parameters != null)
-                    {
-                        command = CreateCommand(commandText, _Connection);
-                    }
-                    else
-                    {
-                        command = CreateCommand(commandText, _Connection, parameters);
-                    }
-                    await _Connection.OpenAsync();
-                    result = await command.ExecuteNonQueryAsync();
-                });
+                return r.GetOrdinal(columnName) >= 0;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                //_Logger.LogError(LoggingEvents.GENERAL_ERROR, $"Method: {UtilityMethods.GetCallerMemberName()} for column {columnName}");
+                return false;
+            }
+        }
 
-            }
-            catch (Exception e)
-            {
-                _Logger.LogError(LoggingEvents.GENERAL_ERROR, "Execution failed with exception: " + e.Message);
-                result = 0;
-            }
-            finally
-            {
-                _Connection.Close();
-            }
+        /// <summary>
+        /// Static operation to create a string name for datastore search/query parameter
+        /// </summary>
+        /// <param name="classObject">the object to be searched</param>
+        /// <param name="parameterName">The parameter name to be combined with the class object name</param>
+        /// <returns>A string combined parameter to query for the '_'</returns>
+        public static string CreateDataReaderNameSearchParameter(this object classObject, string parameterName)
+        {
+            string result = "";
+            result = string.Format($"{classObject.GetType().Name}_{parameterName}");
             return result;
         }
 
         /// <summary>
-        /// Executes a parameterless query that returns a list of rows as the result.
+        /// 
         /// </summary>
-        /// <param name="commandText">The stored procedure to be executed</param>
-        /// <returns>A list of a Dictionary of Key, value pairs representing the Column Name and corresponding value</returns>
-        public async Task<List<Dictionary<string, string>>> Query(string commandText)
+        /// <param name="objectType">cannot be null or white space</param>
+        /// <param name="parameterName">cannot be null or white space</param>
+        /// <returns></returns>
+        public static string CreateDataReaderNameSearchParameterForObjectType(string objectType, string parameterName = "ID")
         {
-            List<Dictionary<string, string>> rows = null;
+            string result = "";
 
-            if (string.IsNullOrEmpty(commandText))
+            //Do a null / white space check for either parameters provided
+            if (string.IsNullOrWhiteSpace(objectType) || string.IsNullOrWhiteSpace(parameterName))
             {
-                throw new ArgumentException("Command text cannot be null or empty");
+                //we could throw just a standard exception here!!
+                //throw new EmptyStringException();
+                return result;
             }
 
             try
             {
-                await _RetryPolicy.ExecuteAsync(async () =>
-                {
-                    SqlCommand command = null;
-                    command = CreateCommand(commandText, _Connection);
-                    await _Connection.OpenAsync();
-                    using (SqlDataReader reader = await command.ExecuteReaderAsync())
-                    {
-                        rows = new List<Dictionary<string, string>>();
-                        while (reader.Read())
-                        {
-                            var row = new Dictionary<string, string>();
-                            for (var i = 0; i < reader.FieldCount; i++)
-                            {
-                                var columnName = reader.GetName(i);
-                                var columnValue = reader.IsDBNull(i) ? null : reader[i].ToString(); ;
-                                row.Add(columnName, columnValue);
-                            }
-                            rows.Add(row);
-                        }
-                    }
-                });
+                objectType = objectType.Split('.').Last();
             }
-            catch (Exception e)
+            catch (ArgumentException e)
             {
-                _Logger.LogError(LoggingEvents.GENERIC_ERROR, "Execution failed with exception: " + e.Message);
+                //Don't care about this as we just want to user the
+                //_Logger.LogError(LoggingEvents.GENERAL_ERROR, $"Method: {UtilityMethods.GetCallerMemberName()} with exception: {e.Message}");
             }
             finally
             {
-                _Connection.Close();
+                result = string.Format($"{objectType}_{parameterName}");
             }
-
-            return rows;
+            return result;
         }
 
 
-        /// <summary>
-        /// Executes a query that returns a list of rows as the result.
-        /// </summary>
-        /// <param name="commandText">The stored procedure to be executed</param>
-        /// <param name="parameters">Parameters to pass to the query</param>
-        /// <returns>A list of a Dictionary of Key, value pairs representing the Column Name and corresponding value </returns>
-        public async Task<List<Dictionary<string, string>>> Query(string commandText, Dictionary<string, object> parameters)
-        {
-            List<Dictionary<string, string>> rows = null;
 
-            if (string.IsNullOrEmpty(commandText))
+        /// <summary>
+        /// Return a provide date formatted to a string for usage with SQL query parameters
+        /// </summary>
+        /// <param name="date">Date in question to format</param>
+        /// <returns>A date string formatted to yyyy-MM-dd HH:mm:ss</returns>
+        public static string GenerateSQLFormattedDate(DateTime date)
+        {
+            return date.ToString("yyyy-MM-dd HH:mm:ss");
+        }
+
+        /// <summary>
+        /// Handle parsing of object properties into dictionary of property name and value
+        /// </summary>
+        /// <param name="obj">The object to query the properties for</param>
+        /// <returns>A dictionary of property name keys and object values</returns>
+        public static Dictionary<string, object> ParseObjectPropertiesToDictionary(object obj)
+        {
+            Dictionary<string, object> ModelDictionary = null;
+            if (obj != null)
             {
-                throw new ArgumentException("Command text cannot be null or empty");
+                ModelDictionary = new Dictionary<string, object>();
+
+                try
+                {
+                    foreach (var prop in obj.GetType().GetProperties())
+                    {
+                        ModelDictionary.Add(prop.Name, prop.GetValue(obj, null));
+                    }
+                }
+                catch (Exception e)
+                {
+                    //_Logger.LogError(LoggingEvents.GENERAL_ERROR, $"Method: {UtilityMethods.GetCallerMemberName()} with exception: {e.Message}");
+                }
             }
 
+            return ModelDictionary;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="json"></param>
+        /// <returns></returns>
+        public static T ConvertJsonStringToProvidedGenericType<T>(string json)
+        {
+            T result;
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                //throw new ArgumentException();  
+                _Logger.LogError("1", $"Exception with method {UtilityMethods.GetCallerMemberName()} but parameter content is empty");
+                return default(T);
+            }
             try
             {
-                await _RetryPolicy.ExecuteAsync(async () =>
+                result = JsonConvert.DeserializeObject<T>(json);
+                return (T) (object) result;
+            }
+            catch (JsonSerializationException e)
+            {
+                _Logger.LogError("1", $"Exception with method {UtilityMethods.GetCallerMemberName()} with exception: {e.Message}");
+                return default(T);
+            }
+        }
+
+        //public static object SetValue(object obj, string parameterName, object parameterValue)
+        //{
+        //    try
+        //    {
+        //        obj.GetType().GetProperties().FirstOrDefault(x => x.Name == parameterName).SetValue(obj, parameterValue);
+        //        return obj;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
+
+        public static void PrintProperties(object obj, int indent)
+        {
+            if (obj == null) return;
+            string indentString = new string(' ', indent);
+            Type objType = obj.GetType();
+            PropertyInfo[] properties = objType.GetProperties();
+            foreach (PropertyInfo property in properties)
+            {
+                object propValue = property.GetValue(obj, null);
+                var elems = propValue as IList;
+                if (elems != null)
                 {
-                    SqlCommand command = null;
-                    if (parameters != null)
+                    foreach (var item in elems)
                     {
-                        command = CreateCommand(commandText, _Connection);
+                        PrintProperties(item, indent + 3);
+                    }
+                }
+                else
+                {
+                    // This will not cut-off System.Collections because of the first check
+                    if (property.PropertyType.Assembly == objType.Assembly)
+                    {
+                        Debug.WriteLine("{0}{1}:", indentString, property.Name);
+
+                        PrintProperties(propValue, indent + 2);
                     }
                     else
                     {
-                        command = CreateCommand(commandText, _Connection, parameters);
+                        Debug.WriteLine("{0}{1}: {2}", indentString, property.Name, propValue);
                     }
-                    await _Connection.OpenAsync();
-
-                    using (SqlDataReader reader = await command.ExecuteReaderAsync())
-                    {
-                        int rowCount = 0;
-                        rows = new List<Dictionary<string, string>>();
-                        while (reader.Read())
-                        {
-                            var row = new Dictionary<string, string>();
-                            for (var i = 0; i < reader.FieldCount; i++)
-                            {
-                                var columnName = reader.GetName(i);
-                                var columnValue = reader.IsDBNull(i) ? null : reader[i].ToString();
-                                row.Add(columnName, columnValue);
-                            }
-                            rows.Add(row);
-                            rowCount++;
-                        }
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                //TODO
-                _Logger.LogError(LoggingEvents.GENERIC_ERROR, "Execution failed with exception: " + e.Message);
-            }
-            finally
-            {
-                _Connection.Close();
-            }
-
-            return rows;
-        }
-
-        /// <summary>
-        /// Executes a query that returns a single result
-        /// </summary>
-        /// <param name="commandText">The stored procedure to be executed</param>
-        /// <param name="parameters">The parameters associated with the stored procedure</param>
-        /// <returns>The returned query value</returns>
-        public async Task<object> QueryValue(string commandText, Dictionary<string, object> parameters)
-        {
-            object queryResult = null;
-
-            if (string.IsNullOrEmpty(commandText))
-            {
-                throw new ArgumentException("Command text cannot be null or empty");
-            }
-
-            try
-            {
-                await _RetryPolicy.ExecuteAsync(async () =>
-                {
-                    SqlCommand command = null;
-                    if (parameters != null)
-                    {
-                        command = CreateCommand(commandText, _Connection);
-                    }
-                    else
-                    {
-                        command = CreateCommand(commandText, _Connection, parameters);
-                    }
-                    await _Connection.OpenAsync();
-                    queryResult = await command.ExecuteScalarAsync();
-                });
-            }
-            catch(Exception e)
-            {
-                //TODO
-                _Logger.LogError(LoggingEvents.GENERIC_ERROR, "Execution failed with exception: " + e.Message);
-            }
-            finally
-            {
-                _Connection.Close();
-            }
-
-            return queryResult;
-        }
-
-        /// <summary>
-        /// Helper method to return the string value of a query
-        /// </summary>
-        /// <param name="commandText">The stored procedure to be executed</param>
-        /// <param name="parameters">Parameters to pass to the query</param>
-        /// <returns>The string value resulting from the query</returns>
-        public async Task<string> GetStringValue(string commandText, Dictionary<string, object> parameters)
-        {
-            string value = await QueryValue(commandText, parameters) as string;
-            return value;
-        }
-
-        /// <summary>
-        /// Inherited IDisposable method
-        /// ensure closure of any connections and garbage collections
-        /// </summary>
-        public void Dispose()
-        {
-            if (_Connection != null)
-            {
-                //Ensure that if connection is still present, it is closed and disposed off
-                _Connection.Close();
-                _Connection.Dispose();
+                }
             }
         }
+    }
 }

@@ -1,6 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using MyGenericContext.DataLayer.Interfaces;
+using MyGenericContext.Models;
+using MyGenericContext.Settings;
+using MyGenericContext.Utilities;
+using Microsoft.Practices.EnterpriseLibrary.TransientFaultHandling;
 
 namespace MyGenericContext.DataLayer
 {
@@ -159,7 +168,7 @@ namespace MyGenericContext.DataLayer
             }
             catch (Exception e)
             {
-                _Logger.LogError(LoggingEvents.GENERAL_ERROR, "Execution failed with exception: " + e.Message);
+                _Logger.LogError(LoggingEvents.GENERIC_ERROR, "Execution failed with exception: " + e.Message);
                 result = 0;
             }
             finally
@@ -209,7 +218,7 @@ namespace MyGenericContext.DataLayer
             }
             catch (Exception e)
             {
-                _Logger.LogError(LoggingEvents.GENERAL_ERROR, "Execution failed with exception: " + e.Message);
+                _Logger.LogError(LoggingEvents.GENERIC_ERROR, "Execution failed with exception: " + e.Message);
             }
             finally
             {
@@ -272,7 +281,7 @@ namespace MyGenericContext.DataLayer
             catch (Exception e)
             {
                 //TODO
-                _Logger.LogError(LoggingEvents.GENERAL_ERROR, "Execution failed with exception: " + e.Message);
+                _Logger.LogError(LoggingEvents.GENERIC_ERROR, "Execution failed with exception: " + e.Message);
             }
             finally
             {
@@ -317,7 +326,7 @@ namespace MyGenericContext.DataLayer
             catch(Exception e)
             {
                 //TODO
-                _Logger.LogError(LoggingEvents.GENERAL_ERROR, "Execution failed with exception: " + e.Message);
+                _Logger.LogError(LoggingEvents.GENERIC_ERROR, "Execution failed with exception: " + e.Message);
             }
             finally
             {
@@ -352,4 +361,5 @@ namespace MyGenericContext.DataLayer
                 _Connection.Dispose();
             }
         }
+    }
 }

@@ -99,7 +99,7 @@ namespace MyGenericContext.Utilities
             catch (ArgumentException e)
             {
                 //Don't care about this as we just want to user the
-                //_Logger.LogError(LoggingEvents.GENERAL_ERROR, $"Method: {UtilityMethods.GetCallerMemberName()} with exception: {e.Message}");
+                _Logger.LogError(LoggingEvents.GENERIC_ERROR, $"Method: {UtilityMethods.GetCallerMemberName()} with exception: {e.Message}");
             }
             finally
             {
@@ -141,7 +141,7 @@ namespace MyGenericContext.Utilities
                 }
                 catch (Exception e)
                 {
-                    //_Logger.LogError(LoggingEvents.GENERAL_ERROR, $"Method: {UtilityMethods.GetCallerMemberName()} with exception: {e.Message}");
+                    _Logger.LogError(LoggingEvents.GENERIC_ERROR, $"Method: {UtilityMethods.GetCallerMemberName()} with exception: {e.Message}");
                 }
             }
 
@@ -199,6 +199,7 @@ namespace MyGenericContext.Utilities
                 var elems = propValue as IList;
                 if (elems != null)
                 {
+                    Debug.WriteLine($"property is {property.Name} is a IList");
                     foreach (var item in elems)
                     {
                         PrintProperties(item, indent + 3);
@@ -206,17 +207,21 @@ namespace MyGenericContext.Utilities
                 }
                 else
                 {
-                    // This will not cut-off System.Collections because of the first check
-                    if (property.PropertyType.Assembly == objType.Assembly)
-                    {
-                        Debug.WriteLine("{0}{1}:", indentString, property.Name);
+                    var Type = property.PropertyType;
+                    Debug.WriteLine($"Type is {Type} with name: {property.Name}");
 
-                        PrintProperties(propValue, indent + 2);
-                    }
-                    else
-                    {
-                        Debug.WriteLine("{0}{1}: {2}", indentString, property.Name, propValue);
-                    }
+                    int i = 1;
+                    // This will not cut-off System.Collections because of the first check
+                    // if (property.PropertyType.GetTypeInfo().Assembly == objType.GetTypeInfo().IsAssembly)
+                    // {
+                    //     Debug.WriteLine("{0}{1}:", indentString, property.Name);
+
+                    //     PrintProperties(propValue, indent + 2);
+                    // }
+                    // else
+                    // {
+                    //     Debug.WriteLine("{0}{1}: {2}", indentString, property.Name, propValue);
+                    // }
                 }
             }
         }

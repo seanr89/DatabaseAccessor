@@ -7,6 +7,7 @@ using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using MyGenericContext.Settings;
 
 namespace MyGenericContext.Utilities
 {
@@ -38,7 +39,8 @@ namespace MyGenericContext.Utilities
         /// <returns></returns>
         Incremental CreateIncrementalStrategy()
         {
-            Incremental IncrementalStrategy = new Incremental(_RetrySettings.RetryCount, TimeSpan.FromMilliseconds(_RetrySettings.InitialInterval), TimeSpan.FromSeconds(_RetrySettings.Increment));
+            Incremental IncrementalStrategy = new Incremental(_RetrySettings.RetryCount, TimeSpan.FromMilliseconds(_RetrySettings.InitialInterval), 
+            TimeSpan.FromSeconds(_RetrySettings.Increment));
 
             return IncrementalStrategy;
         }

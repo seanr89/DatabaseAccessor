@@ -72,21 +72,26 @@ namespace MyGenericContext
                     //If the item is not null
                     if(elems != null)
                     {
-                        //The item is collection and therefore we need to split this up!
-                        //and maybe continue to loop through this again!
-                        //ReadEnumerableContent(property);
-                        ObjectPropertyDetails CollectionObject = new ObjectPropertyDetails();
-                        CollectionObject.IsClass = false;
-                        CollectionObject.IsEnumerable = true;
-                        CollectionObject.PropertyType = propertyType;
-                        //Set the name as the type of the object
-                        CollectionObject.Name = obj.GetType().ToString();
+                        //Note - we need to loop through this object here!!
+                        foreach(var item in elems)
+                        {
+                            //The item is collection and therefore we need to split this up!
+                            //and maybe continue to loop through this again!
+                            //ReadEnumerableContent(property);
+                            ObjectPropertyDetails CollectionObject = new ObjectPropertyDetails();
+                            CollectionObject.IsClass = false;
+                            CollectionObject.IsEnumerable = true;
+                            CollectionObject.PropertyType = propertyType;
+                            //Set the name as the type of the object
+                            CollectionObject.Name = obj.GetType().ToString();
+                            CollectionObject.ParentObject = Model;
 
-                        //Add the List object to the current object model
-                        Model.ClassProperties.Add(CollectionObject);
+                            //Add the List object to the current object model
+                            Model.ClassProperties.Add(CollectionObject);
 
-                        //Then recursively call the read object again
-                        ReadObjectAndParseProperties(CollectionObject, ModelList, Model);
+                            //Then recursively call the read object again
+                            ReadObjectAndParseProperties(CollectionObject, ModelList, Model);
+                        }
                     }
                     else //The object is not a collection
                     {
@@ -98,6 +103,7 @@ namespace MyGenericContext
                             GenericObject.IsEnumerable = false;
                             GenericObject.Name = property.Name;
                             GenericObject.PropertyType = property.GetType();
+                            GenericObject.ParentObject = Model;
 
                             Model.ClassProperties.Add(GenericObject);
                         }
@@ -111,7 +117,16 @@ namespace MyGenericContext
             }
             else //The current object is not somehow a class!!!
             {
-                //Not sure what needs to be done, if anything!!
+                //warning may beed to add in a loop check here
+
+                ObjectPropertyDetails GenericObject = new ObjectPropertyDetails();
+                GenericObject.IsClass = false;
+                GenericObject.IsEnumerable = false;
+                GenericObject.Name = objType.Name;
+                GenericObject.PropertyType = objType.GetType();
+                GenericObject.ParentObject = Model;
+
+                Model.ClassProperties.Add(GenericObject);
             }
 
 

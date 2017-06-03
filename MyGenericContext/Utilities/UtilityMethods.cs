@@ -237,7 +237,7 @@ namespace MyGenericContext.Utilities
         }
         */
         /// <summary>
-        /// TODO - define
+        /// Recursive
         /// useful method to parse an object type and get the constituent properties and nested object properties
         /// </summary>
         /// <param name="obj"></param>
@@ -284,6 +284,35 @@ namespace MyGenericContext.Utilities
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Static method to handle the recursive searching through an object to find and log all object properties
+        /// </summary>
+        /// <param name="obj">The object to search</param>
+        /// <param name="propertyList">The current list of properties that have been generated and stored! default is null</param>
+        /// <param name="parentObj">The parent object of the current obj (by default is null)</param>
+        /// <returns>A list of object parameters</returns>
+        public static List<ObjectPropertyDetails> ReadObjectAndParseProperties(object obj, List<ObjectPropertyDetails> propertyList = null, 
+                                                                                object parentObj = null)
+        {
+            _Logger.LogInformation(LoggingEvents.GENERIC_MESSAGE, $"Method: {UtilityMethods.GetCallerMemberName()} for object {obj.GetType().ToString()}");
+            throw new NotImplementedException();
+
+            //Try and load a ModelList with the propertyList parameter
+            List<ObjectPropertyDetails> ModelList = propertyList;
+            //Check the list and if null - initialise else do nothing
+            if(ModelList == null) ModelList = new List<ObjectPropertyDetails>();
+
+            //Create default object for the current obj and intialise
+            ObjectPropertyDetails Model = new ObjectPropertyDetails();
+
+            //If the provided object is null - return null?
+            if(obj == null) return ModelList;
+
+
+            //Long term final event is to return a List
+            return ModelList;
         }
     }
 }

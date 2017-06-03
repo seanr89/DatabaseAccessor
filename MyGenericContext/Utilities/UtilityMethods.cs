@@ -195,6 +195,8 @@ namespace MyGenericContext.Utilities
         //    }
         //}
 
+
+        /*
         public static void PrintProperties(object obj, int indent)
         {
             if (obj == null) return;
@@ -230,6 +232,56 @@ namespace MyGenericContext.Utilities
                     // {
                     //     Debug.WriteLine("{0}{1}: {2}", indentString, property.Name, propValue);
                     // }
+                }
+            }
+        }
+        */
+        /// <summary>
+        /// TODO - define
+        /// useful method to parse an object type and get the constituent properties and nested object properties
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="indent"></param>
+        /// <param name="ParentObject"></param>
+        public static void PrintProperties(object obj, int indent, string ParentObject = null)
+        {
+            if (obj == null) return;
+            string indentString = new string(' ', indent);
+            Type objType = obj.GetType();
+            PropertyInfo[] properties = objType.GetProperties();
+            foreach (PropertyInfo property in properties)
+            {
+                var FoundParent = "";
+
+                object propValue = property.GetValue(obj, null);
+                var elems = propValue as IList;
+
+                if (elems != null)
+                {
+                    FoundParent = elems[0].GetType().ToString();
+                    //Debug.WriteLine($"Found a list of items with collection type {elems[0].GetType().ToString()}");
+                    foreach (var item in elems)
+                    {
+                        PrintProperties(item, indent + 3, FoundParent);
+                    }
+                }
+                else
+                {
+                    if (ParentObject != null)
+                    {
+                        //Debug.WriteLine($"{indentString} Current property Name: {property.Name} with type: {property.PropertyType.ToString()} For parent {ParentObject}");
+                        if (property.PropertyType.GetTypeInfo().IsClass && property.PropertyType.ToString() != "System.String")
+                        {
+                            //var InheritedObject = CreateObjectFromPropertyType(property.PropertyType);
+                            //Debug.WriteLine($"{indentString} current property Name: {property.Name} is a class");
+                            PrintProperties(propValue, indent + 2, ParentObject);
+                        }
+                    }
+                    else
+                    {
+                        ParentObject = obj.GetType().ToString();
+                        //Debug.WriteLine($"{indentString} Current property Name: {property.Name} with type: {property.PropertyType.ToString()} for base object {ParentObject}");
+                    }
                 }
             }
         }

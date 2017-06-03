@@ -239,6 +239,7 @@ namespace MyGenericContext.DataLayer
         {
             List<Dictionary<string, string>> rows = null;
 
+            //Check if there is a valid command text string
             if (string.IsNullOrEmpty(commandText))
             {
                 throw new ArgumentException("Command text cannot be null or empty");
@@ -246,6 +247,7 @@ namespace MyGenericContext.DataLayer
 
             try
             {
+                //Execute the following code block and handle transients fault exceptions a retry policy
                 await _RetryPolicy.ExecuteAsync(async () =>
                 {
                     SqlCommand command = null;

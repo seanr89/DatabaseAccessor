@@ -11,11 +11,18 @@ using MyGenericContext.Settings;
 
 namespace MyGenericContext.Utilities
 {
+    /// <summary>
+    /// class object to handle the object request for generating a retry policy
+    /// </summary>
     public class DataRetryHandler
     {
         private readonly ILogger _Logger;
         private readonly RetryConnectionSettings _RetrySettings;
         
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="RetrySettings">Retry policy settings object</param>
         public DataRetryHandler(RetryConnectionSettings RetrySettings)
         {
             _Logger = ApplicationLoggerProvider.CreateLogger<DataRetryHandler>();
@@ -46,6 +53,9 @@ namespace MyGenericContext.Utilities
         }
     }
 
+    /// <summary>
+    /// Transient error detection strategy to handle transient faults and executing the retry policy
+    /// </summary>
     public class StorageTransientErrorDetectionStrategy : ITransientErrorDetectionStrategy
     {
         /// <summary>

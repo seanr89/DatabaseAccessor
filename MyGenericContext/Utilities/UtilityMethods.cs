@@ -37,26 +37,34 @@ namespace MyGenericContext.Utilities
         {
             return name;
         }
+
         /// <summary>
-        /// Static operation to check if the provided Datareader object has the provided column name
+        /// /// Static operation to check if the provided Datareader object has the provided column name
         /// </summary>
-        /// <param name="r">the datareader object</param>
+        /// <param name="r">the current datareader object to be searched</param>
         /// <param name="columnName">the column name to search for</param>
         /// <returns>A boolean variable</returns>
-        public static bool HasColumn(this IDataRecord r, string columnName)
+        public static bool HasColumn(this IDataRecord dr, string columnName)
         {
-            if (string.IsNullOrWhiteSpace(columnName))
+            if(string.IsNullOrWhiteSpace(columnName))
             {
                 return false;
             }
 
             try
             {
-                return r.GetOrdinal(columnName) >= 0;
+                for (int i = 0; i < dr.FieldCount; i++)
+                {
+                    if (dr.GetName(i).Equals(columnName))
+                    {
+                        return true;
+                    }
+                }
+                return false;
             }
-            catch (IndexOutOfRangeException)
+            catch (NullReferenceException)
             {
-                //_Logger.LogError(LoggingEvents.GENERAL_ERROR, $"Method: {UtilityMethods.GetCallerMemberName()} for column {columnName}");
+                _Logger.LogError(LoggingEvents.GENERIC_ERROR, $"Method: {UtilityMethods.GetCallerMemberName()} for column {columnName}");
                 return false;
             }
         }

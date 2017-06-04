@@ -29,10 +29,9 @@ namespace MyGenericContext
         /// <param name="parentObj">The parent object of the current obj (by default is null)</param>
         /// <returns>A list of object parameters</returns>
         public List<ObjectPropertyDetails> ReadObjectAndParseProperties(object obj, List<ObjectPropertyDetails> propertyList = null, 
-                                                                                object parentObj = null)
+                                                                                ObjectPropertyDetails parentObj = null)
         {
             _Logger.LogInformation(LoggingEvents.GENERIC_MESSAGE, $"Method: {UtilityMethods.GetCallerMemberName()} for object {obj.GetType().ToString()}");
-            throw new NotImplementedException();
 
             //Try and load a ModelList with the propertyList parameter
             List<ObjectPropertyDetails> ModelList = propertyList;
@@ -49,20 +48,18 @@ namespace MyGenericContext
             //Check if the current object is a class
             if(IsCurrentClassObjectTypeAClass(obj.GetType().GetTypeInfo()))
             {
-                Debug.WriteLine($"object found: {obj.GetType()}");
+                Debug.WriteLine($"class object found: {obj.GetType()}");
                 Model.IsClass = true;
                 Model.PropertyType = objType;
                 //Set the name as the type of the object
                 Model.Name = obj.GetType().ToString();
-
-                //Ok so now what??
 
                 //First add the item to the ModelList for safe keeping!!!
                 ModelList.Add(Model);
 
                 //Next get all properties of the current object
                 PropertyInfo[] Properties = objType.GetProperties();
-                ObjectPropertyDetails propertyDetails = null;
+
                 //Then loop through all the current properties
                 foreach(PropertyInfo property in Properties)
                 {
@@ -72,23 +69,23 @@ namespace MyGenericContext
                     //If the item is not null
                     if(elems != null)
                     {
+                        Debug.WriteLine($"IEnumerable object found: {propertyType.ToString()}");    
+                        //Initialise a new object to handle storing object data for the list!
+                        ObjectPropertyDetails CollectionObject = new ObjectPropertyDetails();
+                        CollectionObject.IsClass = false;
+                        CollectionObject.IsEnumerable = true;
+                        CollectionObject.PropertyType = propertyType;
+                        //Set the name as the type of the object
+                        CollectionObject.Name = obj.GetType().ToString();
+                        CollectionObject.ParentObject = Model;
+
+                        //Add the List object to the current object model
+                        Model.ClassProperties.Add(CollectionObject);
+
                         //Note - we need to loop through this object here!!
+                        //The item is collection and therefore we need to split this up!
                         foreach(var item in elems)
                         {
-                            //The item is collection and therefore we need to split this up!
-                            //and maybe continue to loop through this again!
-                            //ReadEnumerableContent(property);
-                            ObjectPropertyDetails CollectionObject = new ObjectPropertyDetails();
-                            CollectionObject.IsClass = false;
-                            CollectionObject.IsEnumerable = true;
-                            CollectionObject.PropertyType = propertyType;
-                            //Set the name as the type of the object
-                            CollectionObject.Name = obj.GetType().ToString();
-                            CollectionObject.ParentObject = Model;
-
-                            //Add the List object to the current object model
-                            Model.ClassProperties.Add(CollectionObject);
-
                             //Then recursively call the read object again
                             ReadObjectAndParseProperties(CollectionObject, ModelList, Model);
                         }
@@ -118,15 +115,37 @@ namespace MyGenericContext
             else //The current object is not somehow a class!!!
             {
                 //warning may beed to add in a loop check here
+                if(IsCurrentObjectTypeAnIEnumerable(obj))
+                {
+                    Type propertyType = obj.GetType();
+                    Model.IsClass = false;
+                    Model.IsEnumerable = true;
+                    Model.PropertyType = objType;
+                    //Set the name as the type of the object
+                    Model.Name = obj.GetType().ToString();
+                    
+                    //First add the item to the parentobj for safe keeping!!!
+                    parentObj.ClassProperties.Add(Model);
 
-                ObjectPropertyDetails GenericObject = new ObjectPropertyDetails();
-                GenericObject.IsClass = false;
-                GenericObject.IsEnumerable = false;
-                GenericObject.Name = objType.Name;
-                GenericObject.PropertyType = objType.GetType();
-                GenericObject.ParentObject = Model;
-
-                Model.ClassProperties.Add(GenericObject);
+                    //Initialse the elem object for loop through the list
+                    var elems = propertyType as IEnumerable;
+                    foreach(var item in elems)
+                    {
+                            //Then recursively call the read object again
+                            ReadObjectAndParseProperties(item, ModelList, Model);
+                    }
+                }
+                else
+                {
+                    ObjectPropertyDetails GenericObject = new ObjectPropertyDetails();
+                    GenericObject.IsClass = false;
+                    GenericObject.IsEnumerable = false;
+                    GenericObject.Name = objType.Name;
+                    GenericObject.PropertyType = objType.GetType();
+                    GenericObject.ParentObject = parentObj;
+                    //Add the item to the included parameter parent object
+                    parentObj.ClassProperties.Add(GenericObject);
+                }
             }
 
 
@@ -150,12 +169,23 @@ namespace MyGenericContext
         }
 
         /// <summary>
-        /// Method to read the content for an enumerable object
+        /// Operation to check if the supplied object is a IEnumerable type
         /// </summary>
-        /// <param name="obj"></param>
-        void ReadEnumerableContent(object obj)
+        /// <param name="obj">The object to be checked</param>
+        /// <returns>A boolean variable: true if obj is an IEnumerable</returns>
+        bool IsCurrentObjectTypeAnIEnumerable(object obj)
         {
-            throw new NotImplementedException();
+            bool result = false;
+
+            Type propertyType = obj.GetType();
+            var elems = propertyType as IEnumerable;
+            //If the item is not null
+            if(elems != null)
+            {
+                result = true;
+            }
+
+            return result;
         }
     }
 }

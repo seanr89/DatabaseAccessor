@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MyGenericContext.Utilities;
 using MyGenericContext.Models;
+using Newtonsoft.Json;
 
 namespace MyGenericContext.Controllers
 {
@@ -34,6 +35,33 @@ namespace MyGenericContext.Controllers
             //parser.CreateObjectListFromDictionaryList<NestedObjectModel>(test);
 
             return new string[] { "value1", "value2" };
+        }
+
+        // GET api/values/5
+        [HttpGet("{id}")]
+        public IActionResult Get(int id)
+        {
+            try
+            {
+                ObjectPropertyGenerator generator = new ObjectPropertyGenerator();
+                var result = generator.ReadObjectAndParseProperties(new NestedObjectModel());
+                string JSONString = JsonConvert.SerializeObject(result);
+
+                if(string.IsNullOrWhiteSpace(JSONString))
+                {
+                    return BadRequest("No json data available");
+                }
+                else
+                {
+                    return Ok(JSONString);
+                }
+            }
+            catch(Exception e)
+            {
+                return BadRequest();
+            }
+            
+            return Ok();
         }
     }
 }

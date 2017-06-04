@@ -18,7 +18,7 @@ namespace MyGenericContext
         /// </summary>
         public ObjectPropertyGenerator()
         {
-
+            _Logger = ApplicationLoggerProvider.CreateLogger<ObjectPropertyGenerator>();
         }   
 
         /// <summary>
@@ -45,10 +45,12 @@ namespace MyGenericContext
             //Create default object for the current obj and intialise
             ObjectPropertyDetails Model = new ObjectPropertyDetails();
             Type objType = obj.GetType();
+
+            Debug.WriteLine($"current object is {obj.GetType().ToString()}");
             //Check if the current object is a class
             if(IsCurrentClassObjectTypeAClass(obj.GetType().GetTypeInfo()))
             {
-                Debug.WriteLine($"class object found: {obj.GetType()}");
+                Debug.WriteLine($"class object found: {obj.GetType().GetTypeInfo().ToString()}");
                 Model.IsClass = true;
                 Model.PropertyType = objType;
                 //Set the name as the type of the object
@@ -59,10 +61,13 @@ namespace MyGenericContext
 
                 //Next get all properties of the current object
                 PropertyInfo[] Properties = objType.GetProperties();
+                Debug.WriteLine($"number of properties found {Properties.Length}");
 
                 //Then loop through all the current properties
                 foreach(PropertyInfo property in Properties)
                 {
+                    Debug.WriteLine($"type v1 is {property.PropertyType.ToString()}");
+                    Debug.WriteLine($"current property found: {property.GetType().GetTypeInfo().ToString()} with name {property.Name}");
                     //now create object to check if the current property is a collection (IEnumerable)
                     Type propertyType = property.GetType();
                     var elems = propertyType as IEnumerable;
@@ -92,9 +97,11 @@ namespace MyGenericContext
                     }
                     else //The object is not a collection
                     {
+                        Debug.WriteLine($"property Not a IEnumerable");
                         //we now need to check again to confirm that this is not also an object
-                        if(IsCurrentClassObjectTypeAClass(property.GetType().GetTypeInfo()) == false)
+                        if(IsCurrentClassObjectTypeAClass(property.PropertyType.GetTypeInfo()) == false)
                         {
+                            Debug.WriteLine($"property is not a class");
                             ObjectPropertyDetails GenericObject = new ObjectPropertyDetails();
                             GenericObject.IsClass = false;
                             GenericObject.IsEnumerable = false;
@@ -106,6 +113,7 @@ namespace MyGenericContext
                         }
                         else //if this is then we need to parse again!!
                         {
+                            Debug.WriteLine($"property {property.GetType().GetTypeInfo().ToString()} is marked a class");
                             ReadObjectAndParseProperties(property, ModelList, Model);
                         }
                     }

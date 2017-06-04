@@ -6,18 +6,20 @@ using Microsoft.AspNetCore.Mvc;
 using MyGenericContext.Utilities;
 using MyGenericContext.Models;
 using Newtonsoft.Json;
+using Microsoft.Extensions.Logging;
 
 namespace MyGenericContext.Controllers
 {
     [Route("api/[controller]")]
     public class TestController : Controller
     {
+        private readonly ILogger _Logger;
         /// <summary>
         /// Constructor
         /// </summary>
-        public TestController()
+        public TestController(ILogger<TestController> logger)
         {
-
+            _Logger = logger;
         }
 
         [HttpGet]
@@ -41,6 +43,7 @@ namespace MyGenericContext.Controllers
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
+            _Logger.LogInformation(LoggingEvents.GENERIC_MESSAGE, $"Method call {UtilityMethods.GetCallerMemberName()}");
             try
             {
                 ObjectPropertyGenerator generator = new ObjectPropertyGenerator();
@@ -58,10 +61,8 @@ namespace MyGenericContext.Controllers
             }
             catch(Exception e)
             {
-                return BadRequest();
+                return BadRequest($"exception caught: {e.Message}");
             }
-            
-            return Ok();
         }
     }
 }

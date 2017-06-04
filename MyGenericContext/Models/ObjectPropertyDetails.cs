@@ -48,7 +48,7 @@ namespace MyGenericContext.Models
         /// GET:SET the parent object details of the current object property
         /// </summary>
         /// <returns></returns>
-        public ObjectPropertyDetails ParentObject { get; set; }
+        //public ObjectPropertyDetails ParentObject { get; set; }
 
         #region Optional Properties
 

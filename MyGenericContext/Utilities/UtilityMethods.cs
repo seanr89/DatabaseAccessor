@@ -314,5 +314,25 @@ namespace MyGenericContext.Utilities
             //Long term final event is to return a List
             return ModelList;
         }
+
+        /// <summary>
+        /// Static operation to trigger the instantiation of an object of the provided object type
+        /// </summary>
+        /// <param name="type">the provided object type</param>
+        /// <returns></returns>
+        public static object CreateObjectFromPropertyType(Type type)
+        {
+            object customObject = null;
+            try
+            {
+                customObject = Activator.CreateInstance(type);
+
+            }
+            catch (Exception e)
+            {
+                _Logger.LogError(LoggingEvents.GENERIC_ERROR, $"error with exception {e.Message}");
+            }
+            return customObject;
+        }
     }
 }

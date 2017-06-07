@@ -236,6 +236,7 @@ namespace MyGenericContext.Utilities
             }
         }
         */
+        
         /// <summary>
         /// Recursive
         /// useful method to parse an object type and get the constituent properties and nested object properties
@@ -310,7 +311,6 @@ namespace MyGenericContext.Utilities
             //If the provided object is null - return null?
             if(obj == null) return ModelList;
 
-
             //Long term final event is to return a List
             return ModelList;
         }
@@ -319,7 +319,7 @@ namespace MyGenericContext.Utilities
         /// Static operation to trigger the instantiation of an object of the provided object type
         /// </summary>
         /// <param name="type">the provided object type</param>
-        /// <returns></returns>
+        /// <returns>A generic object instantiate of the provided Type type</returns>
         public static object CreateObjectFromPropertyType(Type type)
         {
             object customObject = null;

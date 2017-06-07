@@ -7,6 +7,7 @@ using MyGenericContext.Utilities;
 using MyGenericContext.Models;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Logging;
+using MyGenericContext.Filters;
 
 namespace MyGenericContext.Controllers
 {
@@ -22,6 +23,7 @@ namespace MyGenericContext.Controllers
             _Logger = logger;
         }
 
+        [TypeFilter(typeof(LogFilterAttribute))]
         [HttpGet]
         public IEnumerable<string> Get()
         {
@@ -39,11 +41,12 @@ namespace MyGenericContext.Controllers
             return new string[] { "value1", "value2" };
         }
 
+        [TypeFilter(typeof(LogFilterAttribute))]
         // GET api/values/5
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            _Logger.LogInformation(LoggingEvents.GENERIC_MESSAGE, $"Method call {UtilityMethods.GetCallerMemberName()}");
+            //_Logger.LogInformation(LoggingEvents.GENERIC_MESSAGE, $"Method call {UtilityMethods.GetCallerMemberName()}");
             try
             {
                 ObjectPropertyGenerator generator = new ObjectPropertyGenerator();

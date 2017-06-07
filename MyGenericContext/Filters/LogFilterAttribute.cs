@@ -1,6 +1,7 @@
 
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
+using MyGenericContext.Models;
 using MyGenericContext.Utilities;
 
 namespace MyGenericContext.Filters
@@ -18,7 +19,7 @@ namespace MyGenericContext.Filters
         {
             if (!context.Canceled) 
             {
-                _Logger.LogInformation($"Executed action {UtilityMethods.GetCallerMemberName()}");
+                _Logger.LogInformation(LoggingEvents.GENERIC_MESSAGE, $"Executed action {UtilityMethods.GetCallerMemberName()}");
                 base.OnActionExecuted(context);
             }
         }

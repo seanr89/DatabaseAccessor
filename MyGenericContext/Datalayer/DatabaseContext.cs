@@ -13,6 +13,9 @@ using Microsoft.Practices.EnterpriseLibrary.TransientFaultHandling;
 
 namespace MyGenericContext.DataLayer
 {
+    /// <summary>
+    /// Database context and accessor class to handle CRUD events at the data source
+    /// </summary>
     public class DatabaseContext : IDatabaseContext, IDisposable
     {
         private readonly ILogger _Logger;
@@ -24,7 +27,9 @@ namespace MyGenericContext.DataLayer
         /// Handler object to request DataRetry Calls
         /// </summary>
         private DataRetryHandler _RetryPolicyHandler;
-
+        /// <summary>
+        /// Retry policy object to be used on action executions
+        /// </summary>
         private readonly RetryPolicy _RetryPolicy;
 
         /// <summary>
@@ -44,7 +49,6 @@ namespace MyGenericContext.DataLayer
             _RetrySettings = RetrySettings.Value;
             _RetryPolicyHandler = RetryPolicyHandler;
             _Connection = new SqlConnection(_ConnectionSettings.DefaultConnection);
-
             _RetryPolicy = _RetryPolicyHandler.GenerateRetryPolicy();
         }
 
@@ -63,7 +67,6 @@ namespace MyGenericContext.DataLayer
             _RetrySettings = RetrySettings;
             _RetryPolicyHandler = RetryPolicyHandler;
             _Connection = new SqlConnection(_ConnectionSettings.DefaultConnection);
-
             _RetryPolicy = _RetryPolicyHandler.GenerateRetryPolicy();
         }
 
@@ -224,7 +227,6 @@ namespace MyGenericContext.DataLayer
             {
                 _Connection.Close();
             }
-
             return rows;
         }
 

@@ -14,15 +14,10 @@ namespace MyGenericContext.Utilities
         private Stopwatch _StopWatch = null;
         private readonly bool _Enabled;
 
-        //public ExecutionPerformanceMonitor()
-        //{
-        //    _StopWatch = Stopwatch.StartNew();
-        //}
-
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="enabled"></param>
+        /// <param name="enabled">If performance monitoring is enabled (default = false)</param>
         public ExecutionPerformanceMonitor(bool enabled = false)
         {
             if(enabled)

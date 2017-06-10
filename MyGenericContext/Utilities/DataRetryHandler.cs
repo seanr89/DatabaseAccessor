@@ -30,18 +30,17 @@ namespace MyGenericContext.Utilities
         }
 
         /// <summary>
-        /// TODO
+        /// Public method to handle the generation of a incrementel retry policy
         /// </summary>
         /// <returns></returns>
         public RetryPolicy GenerateRetryPolicy()
         {
             RetryPolicy policy = new RetryPolicy<StorageTransientErrorDetectionStrategy>(CreateIncrementalStrategy());
-
             return policy;
         }
 
         /// <summary>
-        /// 
+        /// Private method to generate an incremental policy object and return
         /// </summary>
         /// <returns></returns>
         Incremental CreateIncrementalStrategy()

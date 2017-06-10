@@ -26,7 +26,7 @@ namespace MyGenericContext.Utilities
           LoggerFactory.CreateLogger<T>();
 
         /// <summary>
-        /// 
+        /// Method to handle logger creation based on the string name of a file
         /// </summary>
         /// <param name="CategoryName"></param>
         /// <returns></returns>
